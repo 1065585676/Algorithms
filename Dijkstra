@@ -1,0 +1,168 @@
+/*
+
+Dijkstra 算法
+
+*/
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+// 图定义
+const int NO_EDGE = 10000;
+struct MyGraphDefinition {
+	int nodeCount = 0;              // 图节点个数
+	vector<vector<int>> edges;  // 边，权重
+};
+
+/*
+计算 startNode 到 endNode 路径的路径并返回
+参数：
+path: 各节点到 startNode 最短路径经过的下一节点
+startNode: 开始节点( 下标从 0 开始 )
+endNode: 终点节点( 下标从 0 开始 )
+返回值：
+startNode 到 endNode 路径的路径
+*/
+vector<int> calculateOnePath(vector<int> path, int startNode, int endNode) {
+	vector<int> result;
+	if (path[endNode] == -1) return result;
+	
+	int curIndex = endNode;
+	do {
+		result.push_back(curIndex);
+		curIndex = path[curIndex];
+	} while (curIndex != startNode);
+
+	result.push_back(startNode);
+	reverse(result.begin(), result.end());
+	return result;
+}
+
+/*
+计算 startNode 到其他节点的路径并返回
+参数：
+path: 各节点到 startNode 最短路径经过的下一节点
+startNode: 开始节点( 下标从 0 开始 )
+返回值：
+startNode 到其他节点的路径
+*/
+vector<vector<int>> calculateAllPath(vector<int> path, int startNode) {
+	vector<vector<int>> result;
+	for (int i = 0; i < path.size(); i++) {
+		if (i != startNode && path[i] != -1) {
+			result.push_back(calculateOnePath(path, startNode, i));
+		}
+	}
+	return result;
+}
+
+/*
+Dijkstra算法
+参数：
+myGraph: 图
+startNode: 开始节点( 下标从 0 开始 )
+返回值：
+startNode 到各节点的最短距离
+各节点到 startNode 最短路径经过的上一个节点
+*/
+vector<vector<int>> dijkstra(MyGraphDefinition myGraph, int startNode) {
+	vector<int> distance;  // 记录 startNode 到各节点的最短距离
+	vector<int> path;      // 记录各节点到 startNode 最短路径经过的上一个节点
+	vector<bool> S;         // 记录节点是否加入集合
+	
+	// 初始化
+	for (int i = 0; i < myGraph.edges.size(); i++) {
+		distance.push_back(myGraph.edges[startNode][i]);
+		S.push_back(false);
+		if (myGraph.edges[startNode][i] == NO_EDGE) {
+			path.push_back(-1);
+		} else {
+			path.push_back(startNode);
+		}
+	}
+
+	S[startNode] = true;
+	path[startNode] = startNode;
+
+	// 循环 nodeCount - 1 次，直至扫描全部节点
+	for (int i = 0; i < myGraph.nodeCount - 1; i++) {
+
+		// 找下一个最近节点
+		int k = -1; // 记录下一个最近节点编号
+		int minDistance = NO_EDGE; // 记录下一最近节点距离
+		for (int j = 0; j < myGraph.nodeCount; j++)
+		{
+			if (S[j] == false && distance[j] < minDistance) { // 未扫描的节点
+				minDistance = distance[j];
+				k = j;
+			}
+		}
+		S[k] = true;
+
+		// 更新权值
+		for (int i = 0; i < myGraph.nodeCount; i++)
+		{
+			if (S[i] == false && distance[i] > distance[k] + myGraph.edges[k][i]) { // 未扫描的节点
+				distance[i] = distance[k] + myGraph.edges[k][i];
+				path[i] = k;
+			}
+		}
+
+	}
+
+	// 返回结果
+	vector<vector<int>> returnedResult;
+	returnedResult.push_back(distance);
+	returnedResult.push_back(path);
+	return returnedResult;
+}
+
+
+int main(int argc, char** argv) {
+
+	// 测试
+	MyGraphDefinition graph;
+	graph.nodeCount = 7;
+	graph.edges.push_back(vector<int>{0, 4, 6, 6, NO_EDGE, NO_EDGE, NO_EDGE});
+	graph.edges.push_back(vector<int>{NO_EDGE, 0, 1, NO_EDGE, 7, NO_EDGE, NO_EDGE});
+	graph.edges.push_back(vector<int>{NO_EDGE, NO_EDGE, 0, NO_EDGE, 6, 4, NO_EDGE});
+	graph.edges.push_back(vector<int>{NO_EDGE, NO_EDGE, 2, 0, NO_EDGE, 5, NO_EDGE});
+	graph.edges.push_back(vector<int>{NO_EDGE, NO_EDGE, NO_EDGE, NO_EDGE, 0, NO_EDGE, 6});
+	graph.edges.push_back(vector<int>{NO_EDGE, NO_EDGE, NO_EDGE, NO_EDGE, 1, 0, 8});
+	graph.edges.push_back(vector<int>{NO_EDGE, NO_EDGE, NO_EDGE, NO_EDGE, NO_EDGE, NO_EDGE, 0});
+
+	auto result = dijkstra(graph, 0);
+	auto distance = result[0];
+	auto path = result[1];
+	auto onePath = calculateOnePath(path, 0, 2);
+	auto allPath = calculateAllPath(path, 0);
+
+	cout << "Distance：";
+	for (size_t i = 0; i < distance.size(); i++) {
+		cout << distance[i] << " ";
+	}
+
+
+	cout << endl << "Path:";
+	for (size_t i = 0; i < path.size(); i++) {
+		cout << path[i] << " ";
+	}
+
+	cout << endl << "One Path:";
+	for (int i = 0; i < onePath.size(); i++) {
+		cout << onePath[i] << " ";
+	}
+
+	cout << endl << "All Path:" << endl;
+	for (int i = 0; i < allPath.size(); i++) {
+		for (int j = 0; j < allPath[i].size(); j++) {
+			cout << allPath[i][j] << " ";
+		}
+		cout << endl;
+	}
+
+	system("pause");
+	return 0;
+}
